@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulaire Videaste - Base de Connaissance</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #e8c97e;
+    --accent2: #c4a45a;
+    --text: #f0ede8;
+    --muted: #888899;
+    --error: #e87e7e;
+    --success: #7ec4a4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 20%, rgba(232,201,126,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(100,80,180,0.05) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+  .wrapper { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 60px 24px 80px; }
+
+  /* Config */
+  .config-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin-bottom: 40px; }
+  .config-inner { display: flex; align-items: center; gap: 14px; }
+  .config-icon { font-size: 20px; }
+  .config-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .config-text strong { font-size: 14px; }
+  .config-text span { font-size: 12px; color: var(--muted); }
+  .config-toggle { background: transparent; border: 1px solid var(--accent); color: var(--accent); border-radius: 6px; padding: 7px 14px; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .config-toggle:hover { background: rgba(232,201,126,0.1); }
+  .config-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .config-help { font-size: 12px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+  .config-help a { color: var(--accent); text-decoration: none; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; padding: 24px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; max-width: 520px; width: 100%; position: relative; }
+  .modal h3 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 20px; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+  .guide-steps { padding-left: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .guide-steps li { font-size: 14px; line-height: 1.6; color: var(--text); }
+  .guide-steps a { color: var(--accent); text-decoration: none; }
+  .guide-steps code { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 12px; color: var(--accent); }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 56px; }
+  .header-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; display: block; }
+  .header h1 { font-family: 'Playfair Display', serif; font-size: clamp(32px, 5vw, 52px); font-weight: 400; line-height: 1.15; margin-bottom: 16px; }
+  .header h1 em { font-style: italic; color: var(--accent); }
+  .header p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 480px; margin: 0 auto; }
+
+  /* Progress */
+  .progress-wrap { margin-bottom: 48px; }
+  .progress-steps { display: flex; justify-content: space-between; align-items: center; }
+  .step-dot { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex: 1; }
+  .step-dot-circle { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--muted); transition: all 0.3s ease; position: relative; z-index: 1; background: var(--bg); }
+  .step-dot.active .step-dot-circle { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 16px rgba(232,201,126,0.25); }
+  .step-dot.done .step-dot-circle { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .step-dot-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  .step-dot.active .step-dot-label { color: var(--accent); }
+  .progress-line { height: 1px; background: var(--border); flex: 1; margin: 0 -4px; position: relative; top: -16px; z-index: 0; }
+  .progress-line-fill { height: 100%; background: var(--accent); transition: width 0.5s ease; }
+
+  /* Sections */
+  .section { display: none; animation: fadeUp 0.4s ease; }
+  .section.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 400; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; }
+  .section-desc { color: var(--muted); font-size: 14px; margin-bottom: 32px; line-height: 1.6; }
+
+  /* Form */
+  .field { margin-bottom: 24px; }
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; letter-spacing: 0.3px; }
+  label .required { color: var(--accent); margin-left: 3px; }
+  label .hint { font-weight: 300; color: var(--muted); font-size: 12px; margin-left: 8px; }
+  input[type="text"], input[type="email"], input[type="tel"], input[type="url"], select, textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 12px 16px; transition: border-color 0.2s, box-shadow 0.2s; outline: none; -webkit-appearance: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,201,126,0.1); }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .grid-2, .config-grid { grid-template-columns: 1fr; } }
+
+  /* Checkboxes */
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+  .checkbox-item { position: relative; }
+  .checkbox-item input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .checkbox-item label { display: inline-flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; transition: all 0.2s; margin: 0; font-weight: 400; }
+  .checkbox-item label::before { content: ''; width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: 3px; transition: all 0.2s; flex-shrink: 0; }
+  .checkbox-item input:checked + label { border-color: var(--accent); color: var(--accent); background: rgba(232,201,126,0.07); }
+  .checkbox-item input:checked + label::before { background: var(--accent); border-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l3 3 5-6' stroke='%230a0a0f' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+
+  /* Radio */
+  .radio-group { display: flex; flex-wrap: wrap; gap: 10px; }
+  .radio-item { position: relative; }
+  .radio-item input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .radio-item label { display: inline-block; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: all 0.2s; margin: 0; font-weight: 400; }
+  .radio-item input:checked + label { border-color: var(--accent); color: var(--accent); background: rgba(232,201,126,0.07); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  .sub-label { font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 16px; margin-top: 28px; }
+
+  /* Nav */
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+  .btn { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 12px 28px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px; }
+  .btn-back { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-back:hover { border-color: var(--text); color: var(--text); }
+  .btn-next { background: var(--accent); color: var(--bg); }
+  .btn-next:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(232,201,126,0.25); }
+  .btn-submit { background: var(--accent); color: var(--bg); padding: 14px 36px; font-size: 15px; }
+  .btn-submit:hover { background: var(--accent2); transform: translateY(-1px); }
+  .step-counter { font-size: 12px; color: var(--muted); letter-spacing: 1px; }
+
+  /* Success */
+  .success-screen { display: none; text-align: center; padding: 60px 0; animation: fadeUp 0.5s ease; }
+  .success-screen.active { display: block; }
+  .success-icon { width: 80px; height: 80px; border-radius: 50%; background: rgba(126,196,164,0.1); border: 1.5px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 28px; }
+  .success-screen h2 { font-family: 'Playfair Display', serif; font-size: 32px; margin-bottom: 14px; }
+  .success-screen p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 440px; margin: 0 auto 36px; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .btn-dl { background: var(--surface); border: 1px solid var(--accent); color: var(--accent); padding: 13px 24px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-dl:hover { background: rgba(232,201,126,0.1); }
+  .btn-send { background: var(--success); color: var(--bg); padding: 13px 24px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; }
+  .btn-send:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .send-status { font-size: 13px; margin-top: 16px; min-height: 20px; }
+  .send-status.ok { color: var(--success); }
+  .send-status.err { color: var(--error); }
+  .send-tip { font-size: 12px; color: var(--muted); margin-top: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; display: inline-block; }
+
+  ::placeholder { color: var(--muted); opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Guide Modal -->
+  <div class="modal-overlay" id="guideModal">
+    <div class="modal">
+      <button class="modal-close" onclick="document.getElementById('guideModal').classList.remove('open')">&#x2715;</button>
+      <h3>Configurer EmailJS en 5 min</h3>
+      <ol class="guide-steps">
+        <li>Creez un compte gratuit sur <a href="https://emailjs.com" target="_blank">emailjs.com</a> (200 emails/mois offerts)</li>
+        <li><strong>Connectez Gmail :</strong> Email Services &gt; Add New Service &gt; Gmail &gt; Connect Account. Notez votre <code>Service ID</code></li>
+        <li><strong>Creez un template :</strong> Email Templates &gt; Create New &gt; mettez <code>{{message}}</code> dans le corps &gt; Save. Notez votre <code>Template ID</code></li>
+        <li><strong>Copiez votre Public Key :</strong> Account &gt; General &gt; Public Key</li>
+        <li>Collez ces 3 valeurs dans la configuration du formulaire avec votre email de reception</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Config Banner -->
+  <div class="config-banner">
+    <div class="config-inner">
+      <span class="config-icon">&#9881;&#65039;</span>
+      <div class="config-text">
+        <strong>Configuration EmailJS</strong>
+        <span>Pour recevoir les reponses automatiquement dans votre boite email</span>
+      </div>
+      <button class="config-toggle" onclick="toggleConfig()">Configurer &#8594;</button>
+    </div>
+    <div class="config-form" id="configForm" style="display:none">
+      <div class="config-grid">
+        <div class="field"><label>Public Key <span class="required">*</span></label><input type="text" id="ejs_pk" placeholder="user_xxxxxxxxxx"></div>
+        <div class="field"><label>Service ID <span class="required">*</span></label><input type="text" id="ejs_svc" placeholder="service_xxxxxxx"></div>
+        <div class="field"><label>Template ID <span class="required">*</span></label><input type="text" id="ejs_tpl" placeholder="template_xxxxxxx"></div>
+        <div class="field"><label>Votre email de reception <span class="required">*</span></label><input type="email" id="ejs_em" placeholder="votre@email.com"></div>
+      </div>
+      <div class="config-help">
+        Pas encore de compte ? <a href="https://emailjs.com" target="_blank">emailjs.com</a> est gratuit jusqu'a 200 emails/mois.
+        &nbsp;<a href="#" onclick="document.getElementById('guideModal').classList.add('open'); return false;">Voir le guide detaille &#8594;</a>
+      </div>
+      <div style="margin-top:16px; display:flex; align-items:center; gap:12px">
+        <button class="btn btn-next" style="font-size:13px; padding:10px 20px" onclick="saveConfig()">Enregistrer</button>
+        <span id="cfgOk" style="display:none; color:var(--success); font-size:12px">&#10003; Configuration enregistree</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <span class="header-eyebrow">Agent Assistant Videaste</span>
+    <h1>Construisons votre<br><em>base de connaissance</em></h1>
+    <p>Ce formulaire permet de collecter toutes les informations necessaires pour creer un assistant IA qui vous represente parfaitement.</p>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="progress-wrap">
+    <div class="progress-steps">
+      <div class="step-dot active" onclick="goToStep(1)"><div class="step-dot-circle">1</div><div class="step-dot-label">Profil</div></div>
+      <div class="progress-line"><div class="progress-line-fill" id="line1" style="width:0%"></div></div>
+      <div class="step-dot" onclick="goToStep(2)"><div class="step-dot-circle">2</div><div class="step-dot-label">Offres</div></div>
+      <div class="progress-line"><div class="progress-line-fill" id="line2" style="width:0%"></div></div>
+      <div class="step-dot" onclick="goToStep(3)"><div class="step-dot-circle">3</div><div class="step-dot-label">Process</div></div>
+      <div class="progress-line"><div class="progress-line-fill" id="line3" style="width:0%"></div></div>
+      <div class="step-dot" onclick="goToStep(4)"><div class="step-dot-circle">4</div><div class="step-dot-label">FAQ</div></div>
+      <div class="progress-line"><div class="progress-line-fill" id="line4" style="width:0%"></div></div>
+      <div class="step-dot" onclick="goToStep(5)"><div class="step-dot-circle">5</div><div class="step-dot-label">Ton</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1 : Profil -->
+  <div class="section active" id="section-1">
+    <div class="section-title">&#127916; Profil &amp; Activite</div>
+    <div class="section-desc">Presentez-vous et decrivez votre activite principale.</div>
+    <div class="grid-2">
+      <div class="field"><label>Prenom &amp; Nom <span class="required">*</span></label><input type="text" id="nom" placeholder="Ex : Lucas Martin"></div>
+      <div class="field"><label>Nom de marque / Studio <span class="hint">(si different)</span></label><input type="text" id="marque" placeholder="Ex : Lumiere Films"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label>Email professionnel <span class="required">*</span></label><input type="email" id="email" placeholder="contact@monsite.fr"></div>
+      <div class="field"><label>Telephone</label><input type="tel" id="tel" placeholder="+33 6 00 00 00 00"></div>
+    </div>
+    <div class="field"><label>Site web / Portfolio</label><input type="url" id="site" placeholder="https://monsite.fr"></div>
+    <div class="field"><label>Zone geographique d'intervention <span class="required">*</span></label><input type="text" id="zone" placeholder="Ex : Paris et Ile-de-France, toute la France, international..."></div>
+    <hr class="divider">
+    <div class="field">
+      <label>Types de videos que vous realisez <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="t1" value="Mariage"><label for="t1">Mariage</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t2" value="Corporate"><label for="t2">Corporate</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t3" value="YouTube / Reseaux"><label for="t3">YouTube / Reseaux</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t4" value="Clip musical"><label for="t4">Clip musical</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t5" value="Evenementiel"><label for="t5">Evenementiel</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t6" value="Immobilier"><label for="t6">Immobilier</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t7" value="Documentaire"><label for="t7">Documentaire</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t8" value="Publicite"><label for="t8">Publicite</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t9" value="Formation"><label for="t9">Formation</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="t10" value="Autre"><label for="t10">Autre</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Decrivez votre style en quelques mots <span class="required">*</span></label><textarea id="style" placeholder="Ex : Je realise des videos cinematographiques avec un rendu filmatique, des couleurs chaudes et une approche documentaire..."></textarea></div>
+    <div class="field">
+      <label>Experience</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="exp" id="e1" value="Moins d'1 an"><label for="e1">Moins d'1 an</label></div>
+        <div class="radio-item"><input type="radio" name="exp" id="e2" value="1-3 ans"><label for="e2">1-3 ans</label></div>
+        <div class="radio-item"><input type="radio" name="exp" id="e3" value="3-7 ans"><label for="e3">3-7 ans</label></div>
+        <div class="radio-item"><input type="radio" name="exp" id="e4" value="Plus de 7 ans"><label for="e4">+7 ans</label></div>
+      </div>
+    </div>
+    <div class="nav"><span class="step-counter">Etape 1 sur 5</span><button class="btn btn-next" onclick="nextStep(1)">Suivant &#8594;</button></div>
+  </div>
+
+  <!-- SECTION 2 : Offres -->
+  <div class="section" id="section-2">
+    <div class="section-title">&#128188; Offres &amp; Tarifs</div>
+    <div class="section-desc">Decrivez vos formules pour que l'assistant puisse repondre aux questions de prix.</div>
+    <div class="sub-label">Formule 1</div>
+    <div class="grid-2">
+      <div class="field"><label>Nom</label><input type="text" id="f1nom" placeholder="Ex : Essentiel, Starter..."></div>
+      <div class="field"><label>Tarif</label><input type="text" id="f1prix" placeholder="Ex : a partir de 800 euros"></div>
+    </div>
+    <div class="field"><label>Ce qui est inclus</label><textarea id="f1desc" placeholder="Ex : 4h de tournage, film 3 min, 1 session de retouches..." style="min-height:80px"></textarea></div>
+    <div class="sub-label">Formule 2</div>
+    <div class="grid-2">
+      <div class="field"><label>Nom</label><input type="text" id="f2nom" placeholder="Ex : Premium, Standard..."></div>
+      <div class="field"><label>Tarif</label><input type="text" id="f2prix" placeholder="Ex : a partir de 1 500 euros"></div>
+    </div>
+    <div class="field"><label>Ce qui est inclus</label><textarea id="f2desc" style="min-height:80px" placeholder="Ex : Journee complete, film 5 min, teaser 30s..."></textarea></div>
+    <div class="sub-label">Formule 3 (optionnel)</div>
+    <div class="grid-2">
+      <div class="field"><label>Nom</label><input type="text" id="f3nom" placeholder="Ex : Luxe, Signature..."></div>
+      <div class="field"><label>Tarif</label><input type="text" id="f3prix" placeholder="Ex : sur devis"></div>
+    </div>
+    <div class="field"><label>Ce qui est inclus</label><textarea id="f3desc" style="min-height:80px" placeholder="Ex : 2 jours de tournage, drone, interview..."></textarea></div>
+    <hr class="divider">
+    <div class="field">
+      <label>Options &amp; supplements</label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="o1"><label for="o1">Drone</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="o2"><label for="o2">Sous-titres</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="o3"><label for="o3">Version Reels</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="o4"><label for="o4">Interview filmee</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="o5"><label for="o5">Etalonnage avance</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="o6"><label for="o6">Licence musicale</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="o7"><label for="o7">Deplacement hors zone</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="o8"><label for="o8">Livraison express</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Delai de livraison habituel</label><input type="text" id="delai" placeholder="Ex : 4 a 6 semaines apres le tournage"></div>
+    <div class="field"><label>Notes tarifaires <span class="hint">(acompte, TVA...)</span></label><textarea id="tarifnotes" style="min-height:80px" placeholder="Ex : Acompte de 30% a la signature. Micro-entrepreneur, pas de TVA..."></textarea></div>
+    <div class="nav"><button class="btn btn-back" onclick="prevStep(2)">&#8592; Retour</button><span class="step-counter">Etape 2 sur 5</span><button class="btn btn-next" onclick="nextStep(2)">Suivant &#8594;</button></div>
+  </div>
+
+  <!-- SECTION 3 : Processus -->
+  <div class="section" id="section-3">
+    <div class="section-title">&#128260; Processus Client</div>
+    <div class="section-desc">De la prise de contact a la livraison.</div>
+    <div class="field">
+      <label>Canaux de contact preferes <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="c1"><label for="c1">Email</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="c2"><label for="c2">WhatsApp</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="c3"><label for="c3">Telephone</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="c4"><label for="c4">Formulaire site</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="c5"><label for="c5">Instagram</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="c6"><label for="c6">LinkedIn</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Etapes du processus <span class="required">*</span></label><textarea id="process" style="min-height:180px" placeholder="1. Premier contact&#10;2. Devis sous 48h&#10;3. Signature + acompte&#10;4. Brief creatif&#10;5. Tournage&#10;6. Montage&#10;7. Livraison"></textarea></div>
+    <div class="field"><label>Ce que vous demandez au client avant le tournage</label><textarea id="avant" style="min-height:100px" placeholder="Ex : Brief rempli, moodboard, liste des personnes cles, programme de la journee..."></textarea></div>
+    <div class="field">
+      <label>Outils de livraison</label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="l1"><label for="l1">WeTransfer</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="l2"><label for="l2">Frame.io</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="l3"><label for="l3">Google Drive</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="l4"><label for="l4">Dropbox</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="l5"><label for="l5">Vimeo prive</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="l6"><label for="l6">Autre</label></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Allers-retours de modifications inclus</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="aller" id="a1" value="1"><label for="a1">1</label></div>
+        <div class="radio-item"><input type="radio" name="aller" id="a2" value="2"><label for="a2">2</label></div>
+        <div class="radio-item"><input type="radio" name="aller" id="a3" value="3"><label for="a3">3</label></div>
+        <div class="radio-item"><input type="radio" name="aller" id="a4" value="Illimite"><label for="a4">Illimite</label></div>
+        <div class="radio-item"><input type="radio" name="aller" id="a5" value="Selon formule"><label for="a5">Selon formule</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Projets que vous refusez</label><textarea id="refus" style="min-height:80px" placeholder="Ex : Demandes de derniere minute, certains types de contenus..."></textarea></div>
+    <div class="nav"><button class="btn btn-back" onclick="prevStep(3)">&#8592; Retour</button><span class="step-counter">Etape 3 sur 5</span><button class="btn btn-next" onclick="nextStep(3)">Suivant &#8594;</button></div>
+  </div>
+
+  <!-- SECTION 4 : FAQ -->
+  <div class="section" id="section-4">
+    <div class="section-title">&#10067; Questions Frequentes</div>
+    <div class="section-desc">Ces reponses permettront a l'agent de gerer les demandes courantes a votre place.</div>
+    <div class="field"><label>Comment gerez-vous les demandes de disponibilite ?</label><textarea id="dispo" style="min-height:90px" placeholder="Ex : Je verifie au cas par cas. Contactez-moi avec votre date et je confirme sous 48h. Aucune date n'est bloquee sans acompte..."></textarea></div>
+    <div class="field"><label>Que repondre a 'Vous etes trop cher' ?</label><textarea id="cher" style="min-height:90px" placeholder="Ex : Mes tarifs couvrent la preparation, le tournage et la post-production. Je peux proposer une formule allégée si besoin..."></textarea></div>
+    <div class="field"><label>Droits sur les videos livrees</label><textarea id="droits" style="min-height:90px" placeholder="Ex : Le client peut utiliser la video librement. Je conserve le droit de l'utiliser dans mon portfolio..."></textarea></div>
+    <div class="field"><label>Musiques utilisees</label><textarea id="musique" style="min-height:80px" placeholder="Ex : Musiques sous licence via Artlist/Musicbed. Diffusion libre sur toutes plateformes..."></textarea></div>
+    <div class="field"><label>Politique d'annulation / report</label><textarea id="annulation" style="min-height:80px" placeholder="Ex : Acompte non remboursable a moins de 30 jours. Report possible sous 6 mois sans frais..."></textarea></div>
+    <div class="field">
+      <label>Appel decouverte avant signature ?</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="appel" id="ap1" value="Oui systematiquement"><label for="ap1">Oui, systematiquement</label></div>
+        <div class="radio-item"><input type="radio" name="appel" id="ap2" value="Oui sur demande"><label for="ap2">Sur demande</label></div>
+        <div class="radio-item"><input type="radio" name="appel" id="ap3" value="Non"><label for="ap3">Non</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Autres questions frequentes &amp; reponses</label><textarea id="autresfaq" style="min-height:120px" placeholder="Toute autre question que vous recevez souvent, avec la reponse souhaitee..."></textarea></div>
+    <div class="nav"><button class="btn btn-back" onclick="prevStep(4)">&#8592; Retour</button><span class="step-counter">Etape 4 sur 5</span><button class="btn btn-next" onclick="nextStep(4)">Suivant &#8594;</button></div>
+  </div>
+
+  <!-- SECTION 5 : Ton -->
+  <div class="section" id="section-5">
+    <div class="section-title">&#127912; Ton &amp; Personnalite</div>
+    <div class="section-desc">Definissez comment l'agent doit communiquer pour vous representer fidelement.</div>
+    <div class="field">
+      <label>Ton de l'agent <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="ton1"><label for="ton1">Chaleureux &amp; humain</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton2"><label for="ton2">Professionnel &amp; serieux</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton3"><label for="ton3">Decontracte &amp; accessible</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton4"><label for="ton4">Creatif &amp; inspirant</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton5"><label for="ton5">Direct &amp; efficace</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton6"><label for="ton6">Rassurant &amp; a l'ecoute</label></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Tutoyer ou vouvoyer ?</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="tutoie" id="tu1" value="Tutoyer"><label for="tu1">Tutoyer (tu)</label></div>
+        <div class="radio-item"><input type="radio" name="tutoie" id="tu2" value="Vouvoyer"><label for="tu2">Vouvoyer (vous)</label></div>
+        <div class="radio-item"><input type="radio" name="tutoie" id="tu3" value="Selon contexte"><label for="tu3">Selon le contexte</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Exemple de message que vous envoyez a vos clients</label><textarea id="exemplemail" style="min-height:120px" placeholder="Collez ici un email ou message type que vous envoyez habituellement..."></textarea></div>
+    <hr class="divider">
+    <div class="field"><label>Ce que l'agent ne doit JAMAIS dire ou promettre</label><textarea id="jamais" style="min-height:100px" placeholder="Ex : Ne jamais promettre une date de livraison precise, ne pas donner de tarif exact sans devis..."></textarea></div>
+    <div class="field"><label>Quand transferer la conversation vers vous ?</label><textarea id="transfert" style="min-height:100px" placeholder="Ex : Si le client insiste pour parler a quelqu'un, si la demande est complexe ou hors formules..."></textarea></div>
+    <div class="field">
+      <label>Reseaux sociaux</label>
+      <div class="grid-2">
+        <input type="url" id="instagram" placeholder="Instagram : https://instagram.com/...">
+        <input type="url" id="youtube" placeholder="YouTube : https://youtube.com/...">
+        <input type="url" id="tiktok" placeholder="TikTok : https://tiktok.com/...">
+        <input type="url" id="linkedin" placeholder="LinkedIn : https://linkedin.com/...">
+      </div>
+    </div>
+    <div class="field"><label>Informations complementaires</label><textarea id="extra" style="min-height:100px" placeholder="Tout ce qui n'a pas ete couvert et qui serait utile a l'agent..."></textarea></div>
+    <div class="nav"><button class="btn btn-back" onclick="prevStep(5)">&#8592; Retour</button><span class="step-counter">Etape 5 sur 5</span><button class="btn btn-submit" onclick="submitForm()">&#10003; Generer la base de connaissance</button></div>
+  </div>
+
+  <!-- Success Screen -->
+  <div class="success-screen" id="success">
+    <div class="success-icon">&#10003;</div>
+    <h2>Base de connaissance creee !</h2>
+    <p>Toutes vos informations sont prets. Telechargez le fichier ou envoyez-le directement par email.</p>
+    <div class="actions">
+      <button class="btn-dl" onclick="downloadTXT()">&#8595; Telecharger (.txt)</button>
+      <button class="btn-dl" onclick="downloadJSON()">&#8595; Telecharger (.json)</button>
+      <button class="btn-send" id="btnSend" onclick="sendEmail()">&#9993; Envoyer par email</button>
+    </div>
+    <div class="send-status" id="sendStatus"></div>
+    <div class="send-tip" id="sendTip">Pour l'envoi par email, configurez EmailJS dans le bandeau en haut de la page.</div>
+  </div>
+
+</div>
+<script>
+  // ============================================================
+  // CONFIGURATION EMAILJS — A remplir par vous avant de publier
+  // ============================================================
+  var EMAILJS_PUBLIC_KEY  = 'q8y2ACaRelXsibjtD';   // ex : user_xxxxxxxxxx
+  var EMAILJS_SERVICE_ID  = 'service_6gyc7n3';   // ex : service_xxxxxxx
+  var EMAILJS_TEMPLATE_ID = 'template_qf1oufr';  // ex : template_xxxxxxx
+  var EMAILJS_TO_EMAIL    = 'salmazen.naccache@gmail.com';     // votre email de reception
+  // ============================================================
+
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+  var ejsCfg = { pk: EMAILJS_PUBLIC_KEY, svc: EMAILJS_SERVICE_ID, tpl: EMAILJS_TEMPLATE_ID, em: EMAILJS_TO_EMAIL };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var banner = document.getElementById('configBanner');
+    if (banner) banner.style.display = 'none';
+    var tip = document.getElementById('sendTip');
+    if (tip) tip.style.display = 'none';
+  });
+
+  let currentStep = 1;
+  let formData = {};
+
+  function toggleConfig() {
+    var f = document.getElementById('configForm');
+    f.style.display = (f.style.display === 'none') ? 'block' : 'none';
+  }
+
+  function saveConfig() {
+    var pk = document.getElementById('ejs_pk').value.trim();
+    var svc = document.getElementById('ejs_svc').value.trim();
+    var tpl = document.getElementById('ejs_tpl').value.trim();
+    var em = document.getElementById('ejs_em').value.trim();
+    if (!pk || !svc || !tpl || !em) { alert('Veuillez remplir tous les champs.'); return; }
+    ejsCfg = { pk: pk, svc: svc, tpl: tpl, em: em };
+    emailjs.init(pk);
+    document.getElementById('cfgOk').style.display = 'inline';
+    document.getElementById('sendTip').style.display = 'none';
+    setTimeout(function() { document.getElementById('configForm').style.display = 'none'; }, 1000);
+  }
+
+  function goToStep(step) { if (step > currentStep) return; switchSection(step); }
+  function nextStep(from) { document.getElementById('line' + from).style.width = '100%'; switchSection(from + 1); }
+  function prevStep(from) { switchSection(from - 1); }
+
+  function switchSection(to) {
+    document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+    document.getElementById('section-' + to).classList.add('active');
+    currentStep = to;
+    document.querySelectorAll('.step-dot').forEach(function(dot, i) {
+      var s = i + 1;
+      dot.classList.remove('active', 'done');
+      if (s < to) dot.classList.add('done');
+      if (s === to) dot.classList.add('active');
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function g(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+  function gc(name) { return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked')).map(function(e) { return e.value; }).join(', '); }
+  function gcb(ids) {
+    return ids.filter(function(id) { var el = document.getElementById(id); return el && el.checked; })
+      .map(function(id) { var el = document.getElementById(id); return el.value || document.querySelector('label[for="' + id + '"]').innerText.trim(); });
+  }
+
+  function collectData() {
+    formData = {
+      profil: { nom: g('nom'), marque: g('marque'), email: g('email'), telephone: g('tel'), site: g('site'), zone: g('zone'), types_videos: gcb(['t1','t2','t3','t4','t5','t6','t7','t8','t9','t10']), style: g('style'), experience: gc('exp') },
+      offres: { formule1: { nom: g('f1nom'), prix: g('f1prix'), description: g('f1desc') }, formule2: { nom: g('f2nom'), prix: g('f2prix'), description: g('f2desc') }, formule3: { nom: g('f3nom'), prix: g('f3prix'), description: g('f3desc') }, options: gcb(['o1','o2','o3','o4','o5','o6','o7','o8']), delai: g('delai'), notes: g('tarifnotes') },
+      processus: { canaux: gcb(['c1','c2','c3','c4','c5','c6']), etapes: g('process'), avant_tournage: g('avant'), livraison: gcb(['l1','l2','l3','l4','l5','l6']), allers_retours: gc('aller'), projets_refuses: g('refus') },
+      faq: { disponibilites: g('dispo'), trop_cher: g('cher'), droits: g('droits'), musique: g('musique'), annulation: g('annulation'), appel: gc('appel'), autres: g('autresfaq') },
+      ton: { ton: gcb(['ton1','ton2','ton3','ton4','ton5','ton6']), tutoiement: gc('tutoie'), exemple: g('exemplemail'), jamais: g('jamais'), transfert: g('transfert'), reseaux: { instagram: g('instagram'), youtube: g('youtube'), tiktok: g('tiktok'), linkedin: g('linkedin') }, extra: g('extra') }
+    };
+    return formData;
+  }
+
+  function buildTXT(d) {
+    var sep = '\n' + '-'.repeat(50) + '\n';
+    var ln = function(k, v) { if (!v || (Array.isArray(v) && !v.length)) return ''; return '> ' + k + ' : ' + (Array.isArray(v) ? v.join(', ') : v) + '\n'; };
+    var t = 'BASE DE CONNAISSANCE - AGENT ASSISTANT VIDEASTE\n' + '='.repeat(55) + '\n';
+    var p = d.profil;
+    t += sep + '1. PROFIL\n' + sep;
+    t += ln('Nom', p.nom) + ln('Marque', p.marque) + ln('Email', p.email) + ln('Tel', p.telephone) + ln('Site', p.site) + ln('Zone', p.zone) + ln('Types de videos', p.types_videos) + ln('Style', p.style) + ln('Experience', p.experience);
+    var o = d.offres;
+    t += sep + '2. OFFRES & TARIFS\n' + sep;
+    if (o.formule1.nom) t += '> Formule 1 - ' + o.formule1.nom + ' (' + o.formule1.prix + ') : ' + o.formule1.description + '\n';
+    if (o.formule2.nom) t += '> Formule 2 - ' + o.formule2.nom + ' (' + o.formule2.prix + ') : ' + o.formule2.description + '\n';
+    if (o.formule3.nom) t += '> Formule 3 - ' + o.formule3.nom + ' (' + o.formule3.prix + ') : ' + o.formule3.description + '\n';
+    t += ln('Options', o.options) + ln('Delai', o.delai) + ln('Notes', o.notes);
+    var pr = d.processus;
+    t += sep + '3. PROCESSUS CLIENT\n' + sep;
+    t += ln('Canaux de contact', pr.canaux) + ln('Etapes', pr.etapes) + ln('Avant tournage', pr.avant_tournage) + ln('Livraison', pr.livraison) + ln('Allers-retours', pr.allers_retours) + ln('Projets refuses', pr.projets_refuses);
+    var f = d.faq;
+    t += sep + '4. FAQ\n' + sep;
+    t += ln('Disponibilites', f.disponibilites) + ln('Trop cher', f.trop_cher) + ln('Droits', f.droits) + ln('Musique', f.musique) + ln('Annulation', f.annulation) + ln('Appel decouverte', f.appel) + ln('Autres questions', f.autres);
+    var s = d.ton;
+    t += sep + '5. TON & STYLE\n' + sep;
+    t += ln('Ton', s.ton) + ln('Tutoiement', s.tutoiement) + ln('Exemple message', s.exemple) + ln('A ne jamais dire', s.jamais) + ln('Cas de transfert', s.transfert);
+    var r = s.reseaux;
+    if (r.instagram || r.youtube || r.tiktok || r.linkedin) {
+      t += '> Reseaux : ';
+      var rs = [];
+      if (r.instagram) rs.push('Instagram: ' + r.instagram);
+      if (r.youtube) rs.push('YouTube: ' + r.youtube);
+      if (r.tiktok) rs.push('TikTok: ' + r.tiktok);
+      if (r.linkedin) rs.push('LinkedIn: ' + r.linkedin);
+      t += rs.join(' | ') + '\n';
+    }
+    t += ln('Extra', s.extra);
+    return t;
+  }
+
+  function submitForm() {
+    collectData();
+    document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+    document.querySelectorAll('.step-dot').forEach(function(d) { d.classList.add('done'); });
+    document.getElementById('success').classList.add('active');
+    if (ejsCfg.pk) document.getElementById('sendTip').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function downloadTXT() {
+    var d = Object.keys(formData).length ? formData : collectData();
+    var blob = new Blob([buildTXT(d)], { type: 'text/plain;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'base-connaissance-videaste.txt'; a.click();
+  }
+
+  function downloadJSON() {
+    var d = Object.keys(formData).length ? formData : collectData();
+    var blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'base-connaissance-videaste.json'; a.click();
+  }
+
+  function sendEmail() {
+    var status = document.getElementById('sendStatus');
+    if (!ejsCfg.pk) {
+      status.textContent = 'Veuillez configurer EmailJS en haut de la page avant d\'envoyer.';
+      status.className = 'send-status err'; return;
+    }
+    var btn = document.getElementById('btnSend');
+    btn.disabled = true; btn.textContent = 'Envoi en cours...'; status.textContent = ''; status.className = 'send-status';
+    var d = Object.keys(formData).length ? formData : collectData();
+    emailjs.send(ejsCfg.svc, ejsCfg.tpl, {
+      to_email: ejsCfg.em,
+      from_name: d.profil.nom || 'Videaste',
+      subject: 'Base de connaissance - ' + (d.profil.nom || 'Videaste'),
+      message: buildTXT(d)
+    }).then(function() {
+      status.textContent = 'Email envoye avec succes a ' + ejsCfg.em + ' !';
+      status.className = 'send-status ok'; btn.textContent = 'Envoye !';
+    }, function(err) {
+      console.error(err);
+      status.textContent = 'Erreur : ' + (err.text || 'Verifiez vos identifiants EmailJS.');
+      status.className = 'send-status err'; btn.disabled = false; btn.textContent = 'Envoyer par email';
+    });
+  }
+</script>
+</body>
+</html>
