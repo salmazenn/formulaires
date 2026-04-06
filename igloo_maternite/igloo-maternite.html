@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Igloo Maternite - Base de Connaissance Agent Commercial</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root {
+    --bg: #fdf8f4;
+    --surface: #ffffff;
+    --surface2: #fef3ec;
+    --border: #e8d5c4;
+    --accent: #c4724a;
+    --accent2: #a85c38;
+    --accent-light: #f5e6db;
+    --text: #2c1f17;
+    --muted: #9e7d6a;
+    --success: #5a9e7a;
+    --error: #c44a4a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Jost', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 0%, rgba(196,114,74,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(196,114,74,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 60px 24px 80px; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 52px; }
+  .logo-wrap { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
+  .logo-icon { width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .logo-text { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--accent); letter-spacing: 1px; }
+  .header-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; display: block; }
+  .header h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(30px, 5vw, 48px); font-weight: 400; line-height: 1.2; margin-bottom: 14px; color: var(--text); }
+  .header h1 em { font-style: italic; color: var(--accent); }
+  .header p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 480px; margin: 0 auto; font-weight: 300; }
+
+  /* Progress */
+  .progress-wrap { margin-bottom: 48px; }
+  .progress-steps { display: flex; justify-content: space-between; align-items: center; }
+  .step-dot { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex: 1; }
+  .step-dot-circle { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--muted); transition: all 0.3s ease; position: relative; z-index: 1; background: var(--bg); }
+  .step-dot.active .step-dot-circle { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 4px rgba(196,114,74,0.12); }
+  .step-dot.done .step-dot-circle { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .step-dot-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  .step-dot.active .step-dot-label { color: var(--accent); }
+  .progress-line { height: 1px; background: var(--border); flex: 1; margin: 0 -4px; position: relative; top: -16px; z-index: 0; }
+  .progress-line-fill { height: 100%; background: var(--accent); transition: width 0.5s ease; }
+
+  /* Sections */
+  .section { display: none; animation: fadeUp 0.4s ease; }
+  .section.active { display: block; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; }
+  .section-desc { color: var(--muted); font-size: 14px; margin-bottom: 32px; line-height: 1.6; font-weight: 300; }
+
+  /* Form elements */
+  .field { margin-bottom: 22px; }
+  label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; letter-spacing: 0.2px; }
+  label .required { color: var(--accent); margin-left: 3px; }
+  label .hint { font-weight: 300; color: var(--muted); font-size: 12px; margin-left: 8px; }
+  input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="number"], select, textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'Jost', sans-serif; font-size: 14px; padding: 12px 16px;
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none; -webkit-appearance: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(196,114,74,0.1); }
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+  select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239e7d6a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
+  select option { background: white; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* Checkboxes */
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
+  .checkbox-item { position: relative; }
+  .checkbox-item input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .checkbox-item label { display: inline-flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; transition: all 0.2s; margin: 0; font-weight: 400; }
+  .checkbox-item label::before { content: ''; width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: 3px; transition: all 0.2s; flex-shrink: 0; }
+  .checkbox-item input:checked + label { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .checkbox-item input:checked + label::before { background: var(--accent); border-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l3 3 5-6' stroke='%23ffffff' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+
+  /* Radio */
+  .radio-group { display: flex; flex-wrap: wrap; gap: 10px; }
+  .radio-item { position: relative; }
+  .radio-item input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+  .radio-item label { display: inline-block; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; transition: all 0.2s; margin: 0; font-weight: 400; }
+  .radio-item input:checked + label { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+  .sub-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 14px; margin-top: 24px; }
+
+  /* Nav */
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--border); }
+  .btn { font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 500; padding: 12px 28px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px; }
+  .btn-back { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-back:hover { border-color: var(--text); color: var(--text); }
+  .btn-next { background: var(--accent); color: #fff; }
+  .btn-next:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(196,114,74,0.25); }
+  .btn-submit { background: var(--accent); color: #fff; padding: 14px 36px; font-size: 15px; }
+  .btn-submit:hover { background: var(--accent2); transform: translateY(-1px); }
+  .step-counter { font-size: 12px; color: var(--muted); letter-spacing: 1px; }
+
+  /* Success */
+  .success-screen { display: none; text-align: center; padding: 60px 0; animation: fadeUp 0.5s ease; }
+  .success-screen.active { display: block; }
+  .success-icon { width: 80px; height: 80px; border-radius: 50%; background: rgba(90,158,122,0.1); border: 1.5px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 28px; }
+  .success-screen h2 { font-family: 'Cormorant Garamond', serif; font-size: 32px; margin-bottom: 14px; }
+  .success-screen p { color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 440px; margin: 0 auto 36px; font-weight: 300; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .btn-dl { background: var(--surface); border: 1px solid var(--accent); color: var(--accent); padding: 12px 22px; border-radius: 8px; font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-dl:hover { background: var(--accent-light); }
+  .btn-send { background: var(--success); color: #fff; padding: 12px 22px; border-radius: 8px; font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; }
+  .btn-send:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .send-status { font-size: 13px; margin-top: 16px; min-height: 20px; }
+  .send-status.ok { color: var(--success); }
+  .send-status.err { color: var(--error); }
+
+  ::placeholder { color: var(--muted); opacity: 0.6; }
+
+  /* Decorative banner */
+  .top-banner { background: var(--accent-light); border: 1px solid var(--border); border-radius: 12px; padding: 14px 20px; margin-bottom: 36px; display: flex; align-items: center; gap: 12px; }
+  .top-banner-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .top-banner-text strong { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-wrap">
+      <div class="logo-icon">&#10052;</div>
+      <div class="logo-text">Igloo Maternite</div>
+    </div>
+    <span class="header-eyebrow">Agent Commercial IA</span>
+    <h1>Construisons votre<br><em>base de connaissance</em></h1>
+    <p>Ce formulaire nous permet de tout savoir sur Igloo Maternite pour que votre agent commercial reponde parfaitement a vos clientes.</p>
+  </div>
+
+  <!-- Info banner -->
+  <div class="top-banner">
+    <span style="font-size:20px">&#128149;</span>
+    <div class="top-banner-text">
+      <strong>Pour qui ?</strong> Vos futures mamans, jeunes parents et professionnels de sante meritent un agent qui leur repond avec chaleur et expertise. Ce formulaire y contribue.
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-steps">
+      <div class="step-dot active" onclick="goToStep(1)"><div class="step-dot-circle">1</div><div class="step-dot-label">Boutique</div></div>
+      <div class="progress-line"><div class="progress-line-fill" id="line1" style="width:0%"></div></div>
+      <div class="step-dot" onclick="goToStep(2)"><div class="step-dot-circle">2</div><div class="step-dot-label">Produits</div></div>
+      <div class="progress-line"><div class="progress-line-fill" id="line2" style="width:0%"></div></div>
+      <div class="step-dot" onclick="goToStep(3)"><div class="step-dot-circle">3</div><div class="step-dot-label">Ventes</div></div>
+      <div class="progress-line"><div class="progress-line-fill" id="line3" style="width:0%"></div></div>
+      <div class="step-dot" onclick="goToStep(4)"><div class="step-dot-circle">4</div><div class="step-dot-label">FAQ</div></div>
+      <div class="progress-line"><div class="progress-line-fill" id="line4" style="width:0%"></div></div>
+      <div class="step-dot" onclick="goToStep(5)"><div class="step-dot-circle">5</div><div class="step-dot-label">Ton</div></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1 : La boutique -->
+  <div class="section active" id="section-1">
+    <div class="section-title">&#127968; La boutique</div>
+    <div class="section-desc">Decrivez Igloo Maternite pour que l'agent puisse se presenter et orienter les clientes.</div>
+
+    <div class="grid-2">
+      <div class="field"><label>Nom complet de la boutique <span class="required">*</span></label><input type="text" id="nom_boutique" value="Igloo Maternite"></div>
+      <div class="field"><label>Prenom & Nom du/de la proprietaire</label><input type="text" id="proprio" placeholder="Ex : Sarah Benali"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label>Email de contact <span class="required">*</span></label><input type="email" id="email" placeholder="contact@igloomaternite.com"></div>
+      <div class="field"><label>Telephone / WhatsApp</label><input type="tel" id="tel" placeholder="+216 9X XXX XXX"></div>
+    </div>
+    <div class="field"><label>Ville & pays d'operation <span class="required">*</span></label><input type="text" id="ville" placeholder="Ex : Tunis, Tunisie"></div>
+    <div class="field"><label>Zones de livraison couvertes <span class="required">*</span></label><input type="text" id="livraison_zones" placeholder="Ex : Tout le territoire tunisien, gouvernorat de Tunis uniquement, livraison internationale..."></div>
+
+    <hr class="divider">
+
+    <div class="field">
+      <label>Canaux de vente actifs <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="cv1" checked><label for="cv1">Instagram</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cv2" checked><label for="cv2">Facebook</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cv3"><label for="cv3">WhatsApp Business</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cv4"><label for="cv4">Site e-commerce</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cv5"><label for="cv5">Boutique physique</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cv6"><label for="cv6">Marketplace</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Lien Instagram</label><input type="url" id="instagram" value="https://www.instagram.com/igloo_maternite"></div>
+    <div class="field"><label>Lien Facebook</label><input type="url" id="facebook" value="https://www.facebook.com/search/top?q=igloo%20b%C3%A9b%C3%A9%20et%20maternit%C3%A9"></div>
+
+    <div class="field"><label>En quelques mots, comment decririez-vous Igloo Maternite ? <span class="required">*</span></label>
+      <textarea id="description" placeholder="Ex : Igloo Maternite est une boutique en ligne specialisee dans les produits de maternite et de puericulture. Nous proposons une selection soigneuse de vetements confortables pour femmes enceintes, de linge de lit bebe et d'accessoires essentiels..."></textarea>
+    </div>
+
+    <div class="field"><label>Depuis quand la boutique existe-t-elle ?</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="anciennete" id="a1" value="Moins d'1 an"><label for="a1">Moins d'1 an</label></div>
+        <div class="radio-item"><input type="radio" name="anciennete" id="a2" value="1-3 ans"><label for="a2">1-3 ans</label></div>
+        <div class="radio-item"><input type="radio" name="anciennete" id="a3" value="3-5 ans"><label for="a3">3-5 ans</label></div>
+        <div class="radio-item"><input type="radio" name="anciennete" id="a4" value="Plus de 5 ans"><label for="a4">Plus de 5 ans</label></div>
+      </div>
+    </div>
+
+    <div class="nav"><span class="step-counter">Etape 1 sur 5</span><button class="btn btn-next" onclick="nextStep(1)">Suivant &#8594;</button></div>
+  </div>
+
+  <!-- SECTION 2 : Produits & Gammes -->
+  <div class="section" id="section-2">
+    <div class="section-title">&#128134; Produits & Gammes</div>
+    <div class="section-desc">Decrivez vos produits pour que l'agent puisse conseiller et orienter les clientes vers le bon article.</div>
+
+    <div class="field">
+      <label>Categories de produits proposees <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="p1" value="Vetements de maternite"><label for="p1">Vetements de maternite</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p2" value="Accessoires de maternite"><label for="p2">Accessoires maternite</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p3" value="Literie bebe"><label for="p3">Literie bebe</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p4" value="Accessoires bebe"><label for="p4">Accessoires bebe</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p5" value="Kits de maternite"><label for="p5">Kits / Box maternite</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p6" value="Vetements bebe"><label for="p6">Vetements bebe</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p7" value="Soins et hygiene bebe"><label for="p7">Soins & hygiene bebe</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p8" value="Cadeaux de naissance"><label for="p8">Cadeaux de naissance</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p9" value="Tire-lait et allaitement"><label for="p9">Allaitement</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="p10" value="Autre"><label for="p10">Autre</label></div>
+      </div>
+    </div>
+
+    <div class="sub-label">Vos gammes ou collections</div>
+    <div class="field"><label>Decrivez vos gammes principales <span class="hint">(noms, types de produits, positionnement...)</span></label>
+      <textarea id="gammes" placeholder="Ex :&#10;- Collection Douceur : vetements de maternite en coton bio, tailles S a XXL&#10;- Box Naissance Complete : linge de lit, doudou, accessoires essentiels&#10;- Gamme Allaitement : coussins, soutiens-gorge, tire-lait..."></textarea>
+    </div>
+
+    <div class="field"><label>Fourchette de prix de vos produits</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="prix" id="pr1" value="Moins de 50 TND"><label for="pr1">Moins de 50 TND</label></div>
+        <div class="radio-item"><input type="radio" name="prix" id="pr2" value="50-200 TND"><label for="pr2">50 - 200 TND</label></div>
+        <div class="radio-item"><input type="radio" name="prix" id="pr3" value="200-500 TND"><label for="pr3">200 - 500 TND</label></div>
+        <div class="radio-item"><input type="radio" name="prix" id="pr4" value="Plus de 500 TND"><label for="pr4">Plus de 500 TND</label></div>
+        <div class="radio-item"><input type="radio" name="prix" id="pr5" value="Variable selon les produits"><label for="pr5">Variable</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Y a-t-il des produits phares ou best-sellers a mettre en avant ?</label>
+      <textarea id="bestsellers" style="min-height:80px" placeholder="Ex : Notre kit naissance est notre produit le plus demande. Les pyjamas bebe en coton partent tres vite..."></textarea>
+    </div>
+
+    <div class="field"><label>Y a-t-il des produits en rupture de stock frequente ou des disponibilites limitees ?</label>
+      <textarea id="ruptures" style="min-height:80px" placeholder="Ex : Les tailles S et M partent rapidement. Certains modeles sont en edition limitee..."></textarea>
+    </div>
+
+    <div class="field"><label>Proposez-vous des options de personnalisation ou de commandes sur mesure ?</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="perso" id="pe1" value="Oui"><label for="pe1">Oui</label></div>
+        <div class="radio-item"><input type="radio" name="perso" id="pe2" value="Non"><label for="pe2">Non</label></div>
+        <div class="radio-item"><input type="radio" name="perso" id="pe3" value="Selon les produits"><label for="pe3">Selon les produits</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Si oui, preciser <span class="hint">(broderie, gravure, couleur, taille...)</span></label>
+      <input type="text" id="perso_detail" placeholder="Ex : Broderie prenom sur les gigoteuses, choix de la couleur du panier...">
+    </div>
+
+    <div class="nav"><button class="btn btn-back" onclick="prevStep(2)">&#8592; Retour</button><span class="step-counter">Etape 2 sur 5</span><button class="btn btn-next" onclick="nextStep(2)">Suivant &#8594;</button></div>
+  </div>
+
+  <!-- SECTION 3 : Processus de vente -->
+  <div class="section" id="section-3">
+    <div class="section-title">&#128666; Processus de vente</div>
+    <div class="section-desc">Comment se deroule une commande de A a Z chez Igloo Maternite ?</div>
+
+    <div class="field"><label>Comment une cliente passe-t-elle commande ? <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="cmd1"><label for="cmd1">DM Instagram</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cmd2"><label for="cmd2">Message Facebook</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cmd3"><label for="cmd3">WhatsApp</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cmd4"><label for="cmd4">Formulaire en ligne</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cmd5"><label for="cmd5">Telephone</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="cmd6"><label for="cmd6">En boutique physique</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Decrivez les etapes d'une commande typique <span class="required">*</span></label>
+      <textarea id="processus" style="min-height:180px" placeholder="Ex :&#10;1. La cliente nous contacte via Instagram ou WhatsApp&#10;2. On lui envoie le catalogue ou on repond a ses questions&#10;3. Elle choisit ses articles et confirme sa commande&#10;4. On lui envoie le recapitulatif et le montant total&#10;5. Elle effectue le paiement (virement / paiement a la livraison)&#10;6. On prepare et expedie la commande&#10;7. Livraison en 3-5 jours ouvrables"></textarea>
+    </div>
+
+    <div class="field"><label>Modes de paiement acceptes <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="pay1"><label for="pay1">Virement bancaire</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="pay2"><label for="pay2">Paiement a la livraison</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="pay3"><label for="pay3">Virement bancaire tunisien</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="pay4"><label for="pay4">Carte bancaire</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="pay5"><label for="pay5">Paiement mobile (Flouci, D17)</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="pay6"><label for="pay6">Autre</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Delai de livraison habituel</label>
+      <input type="text" id="delai_liv" placeholder="Ex : 2 a 4 jours ouvrables sur Tunis, 3 a 6 jours pour les autres gouvernorats"></div>
+
+    <div class="field"><label>Transporteurs / services de livraison utilises</label>
+      <input type="text" id="transporteurs" placeholder="Ex : Postes Tunisiennes, Aramex, transporteur prive, livraison en main propre..."></div>
+
+    <div class="field"><label>Politique de retours et echanges</label>
+      <textarea id="retours" style="min-height:90px" placeholder="Ex : Retours acceptes dans les 7 jours apres reception si le produit est intact et dans son emballage d'origine. Echange possible si la taille ne convient pas..."></textarea>
+    </div>
+
+    <div class="field"><label>Y a-t-il un minimum de commande ou des frais de livraison ?</label>
+      <textarea id="frais" style="min-height:80px" placeholder="Ex : Livraison gratuite a partir de 150 TND d'achat. Frais de livraison : 7 TND sur Tunis, 8 TND hors Tunis..."></textarea>
+    </div>
+
+    <div class="nav"><button class="btn btn-back" onclick="prevStep(3)">&#8592; Retour</button><span class="step-counter">Etape 3 sur 5</span><button class="btn btn-next" onclick="nextStep(3)">Suivant &#8594;</button></div>
+  </div>
+
+  <!-- SECTION 4 : FAQ -->
+  <div class="section" id="section-4">
+    <div class="section-title">&#10067; Questions frequentes</div>
+    <div class="section-desc">Aidez l'agent a repondre aux questions les plus courantes de vos clientes.</div>
+
+    <div class="field"><label>Comment conseillez-vous les clientes sur les tailles ?</label>
+      <textarea id="tailles" style="min-height:90px" placeholder="Ex : Nous proposons un guide des tailles detaille. Pour les vetements de maternite, on recommande de prendre sa taille habituelle d'avant grossesse. Pour les vetements bebe, on se base sur le poids et l'age..."></textarea>
+    </div>
+
+    <div class="field"><label>Que repondre si un produit est en rupture de stock ?</label>
+      <textarea id="rupture_rep" style="min-height:80px" placeholder="Ex : On propose de mettre la cliente sur liste d'attente et de la prevenir des le reapprovisionnement. On peut aussi lui proposer un produit similaire..."></textarea>
+    </div>
+
+    <div class="field"><label>Comment gerez-vous les reclamations ou les produits defectueux ?</label>
+      <textarea id="reclamations" style="min-height:80px" placeholder="Ex : La cliente nous contacte avec une photo du probleme. On procede au remplacement ou au remboursement selon le cas..."></textarea>
+    </div>
+
+    <div class="field"><label>Proposez-vous des reductions, promotions ou codes promo ?</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="promo" id="prm1" value="Oui regulierement"><label for="prm1">Oui, regulierement</label></div>
+        <div class="radio-item"><input type="radio" name="promo" id="prm2" value="Occasionnellement"><label for="prm2">Occasionnellement</label></div>
+        <div class="radio-item"><input type="radio" name="promo" id="prm3" value="Non"><label for="prm3">Non</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Precisions sur les promotions <span class="hint">(soldes, fetes, codes...)</span></label>
+      <input type="text" id="promo_detail" placeholder="Ex : Promotions pour les fetes (Eid, Noel), codes promo sur Instagram, soldes saisonniers...">
+    </div>
+
+    <div class="field"><label>Conseillez-vous les clientes sur le choix des produits selon le stade de grossesse ?</label>
+      <textarea id="conseils_grossesse" style="min-height:90px" placeholder="Ex : Pour le 1er trimestre, on recommande... Pour le 3eme trimestre, les vetements extensibles sont plus adaptes... Pour la naissance..."></textarea>
+    </div>
+
+    <div class="field"><label>Y a-t-il des questions medicales ou de sante que l'agent ne doit pas traiter ?</label>
+      <textarea id="hors_sujet" style="min-height:80px" placeholder="Ex : L'agent ne doit pas donner de conseils medicaux sur la grossesse. Il doit toujours rediriger vers un professionnel de sante pour toute question medicale..."></textarea>
+    </div>
+
+    <div class="field"><label>Autres questions frequentes que vous recevez souvent</label>
+      <textarea id="autres_faq" style="min-height:120px" placeholder="Notez toutes les questions que vos clientes posent souvent, avec la reponse ideale..."></textarea>
+    </div>
+
+    <div class="nav"><button class="btn btn-back" onclick="prevStep(4)">&#8592; Retour</button><span class="step-counter">Etape 4 sur 5</span><button class="btn btn-next" onclick="nextStep(4)">Suivant &#8594;</button></div>
+  </div>
+
+  <!-- SECTION 5 : Ton & Style -->
+  <div class="section" id="section-5">
+    <div class="section-title">&#127775; Ton & Personnalite</div>
+    <div class="section-desc">Definissez comment votre agent doit parler a vos clientes pour refleter l'identite d'Igloo Maternite.</div>
+
+    <div class="field">
+      <label>Quel ton souhaitez-vous que l'agent adopte ? <span class="required">*</span></label>
+      <div class="checkbox-group">
+        <div class="checkbox-item"><input type="checkbox" id="ton1" checked><label for="ton1">Chaleureux & bienveillant</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton2" checked><label for="ton2">Expert & rassurant</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton3"><label for="ton3">Enthousiaste & positif</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton4"><label for="ton4">Professionnel & serieux</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton5"><label for="ton5">Proche & amical</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="ton6"><label for="ton6">Doux & maternal</label></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Comment s'adresser aux clientes ?</label>
+      <div class="radio-group">
+        <div class="radio-item"><input type="radio" name="tutoie" id="tu1" value="Vouvoyer (vous)"><label for="tu1">Vouvoyer (vous)</label></div>
+        <div class="radio-item"><input type="radio" name="tutoie" id="tu2" value="Tutoyer (tu)"><label for="tu2">Tutoyer (tu)</label></div>
+        <div class="radio-item"><input type="radio" name="tutoie" id="tu3" value="Selon le contexte"><label for="tu3">Selon le contexte</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Exemple d'un message type que vous envoyez a vos clientes</label>
+      <textarea id="exemple_msg" style="min-height:120px" placeholder="Collez ici un exemple de reponse ou message que vous envoyez habituellement. Cela aidera l'agent a imiter votre style naturel..."></textarea>
+    </div>
+
+    <hr class="divider">
+
+    <div class="field"><label>Ce que l'agent ne doit JAMAIS faire ou dire</label>
+      <textarea id="jamais" style="min-height:100px" placeholder="Ex : Ne jamais promettre une livraison sans verifier les disponibilites. Ne pas donner de conseils medicaux. Ne pas accorder de remises sans autorisation. Ne pas promettre un stock qui pourrait etre epuise..."></textarea>
+    </div>
+
+    <div class="field"><label>Dans quels cas l'agent doit-il vous transferer la conversation ?</label>
+      <textarea id="transfert" style="min-height:90px" placeholder="Ex : Si la cliente a une reclamation urgente. Si elle demande une commande sur mesure importante. Si elle a une question specifique sur les stocks. Si elle exprime une insatisfaction..."></textarea>
+    </div>
+
+    <div class="field"><label>Y a-t-il des clientes VIP ou professionnels (maternites, cliniques...) a traiter differemment ?</label>
+      <textarea id="vip" style="min-height:80px" placeholder="Ex : Les commandes des cliniques et maternites beneficient de tarifs speciaux. Les clientes regulieres ont acces aux nouveautes en avant-premiere..."></textarea>
+    </div>
+
+    <div class="field"><label>Informations complementaires importantes</label>
+      <textarea id="extra" style="min-height:100px" placeholder="Tout ce qui n'a pas ete couvert et qui aiderait l'agent a mieux representer Igloo Maternite..."></textarea>
+    </div>
+
+    <div class="nav"><button class="btn btn-back" onclick="prevStep(5)">&#8592; Retour</button><span class="step-counter">Etape 5 sur 5</span><button class="btn btn-submit" onclick="submitForm()">&#10003; Generer la base de connaissance</button></div>
+  </div>
+
+  <!-- Success Screen -->
+  <div class="success-screen" id="success">
+    <div class="success-icon">&#10003;</div>
+    <h2>Merci, c'est parfait !</h2>
+    <p>La base de connaissance d'Igloo Maternite est prete. Envoyez-la directement par email.</p>
+    <div class="actions">
+      <button class="btn-send" id="btnSend" onclick="sendEmail()">&#9993; Envoyer par email</button>
+    </div>
+    <div class="send-status" id="sendStatus"></div>
+  </div>
+
+</div>
+<script>
+  // ============================================================
+  // CONFIGURATION EMAILJS — A remplir avant de publier
+  // ============================================================
+  var EMAILJS_PUBLIC_KEY  = 'q8y2ACaRelXsibjtD';   // ex : user_xxxxxxxxxx
+  var EMAILJS_SERVICE_ID  = 'service_6gyc7n3';   // ex : service_xxxxxxx
+  var EMAILJS_TEMPLATE_ID = 'template_qf1oufr';  // ex : template_xxxxxxx
+  var EMAILJS_TO_EMAIL    = 'klarai.studio.mtl@gmail.com';     // votre email de reception
+  // ============================================================
+
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+  var ejsCfg = { pk: EMAILJS_PUBLIC_KEY, svc: EMAILJS_SERVICE_ID, tpl: EMAILJS_TEMPLATE_ID, em: EMAILJS_TO_EMAIL };
+
+  let currentStep = 1;
+  let formData = {};
+
+  function goToStep(s) { if (s > currentStep) return; switchSection(s); }
+  function nextStep(from) { document.getElementById('line' + from).style.width = '100%'; switchSection(from + 1); }
+  function prevStep(from) { switchSection(from - 1); }
+
+  function switchSection(to) {
+    document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+    document.getElementById('section-' + to).classList.add('active');
+    currentStep = to;
+    document.querySelectorAll('.step-dot').forEach(function(dot, i) {
+      var s = i + 1;
+      dot.classList.remove('active', 'done');
+      if (s < to) dot.classList.add('done');
+      if (s === to) dot.classList.add('active');
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function g(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+  function gc(name) { return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked')).map(function(e) { return e.value; }).join(', '); }
+  function gcb(ids) {
+    return ids.filter(function(id) { var el = document.getElementById(id); return el && el.checked; })
+      .map(function(id) { var el = document.getElementById(id); return el.value || document.querySelector('label[for="' + id + '"]').innerText.trim(); });
+  }
+
+  function collectData() {
+    formData = {
+      boutique: {
+        nom: g('nom_boutique'), proprietaire: g('proprio'), email: g('email'),
+        telephone: g('tel'), ville: g('ville'), zones_livraison: g('livraison_zones'),
+        canaux_vente: gcb(['cv1','cv2','cv3','cv4','cv5','cv6']),
+        instagram: g('instagram'), facebook: g('facebook'),
+        description: g('description'), anciennete: gc('anciennete')
+      },
+      produits: {
+        categories: gcb(['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10']),
+        gammes: g('gammes'), fourchette_prix: gc('prix'),
+        bestsellers: g('bestsellers'), ruptures: g('ruptures'),
+        personnalisation: gc('perso'), personnalisation_detail: g('perso_detail')
+      },
+      ventes: {
+        processus_commande: gcb(['cmd1','cmd2','cmd3','cmd4','cmd5','cmd6']),
+        etapes: g('processus'), paiements: gcb(['pay1','pay2','pay3','pay4','pay5','pay6']),
+        delai_livraison: g('delai_liv'), transporteurs: g('transporteurs'),
+        retours: g('retours'), frais_livraison: g('frais')
+      },
+      faq: {
+        conseils_tailles: g('tailles'), rupture_stock: g('rupture_rep'),
+        reclamations: g('reclamations'), promotions: gc('promo'),
+        promotions_detail: g('promo_detail'), conseils_grossesse: g('conseils_grossesse'),
+        sujets_exclus: g('hors_sujet'), autres_faq: g('autres_faq')
+      },
+      ton_style: {
+        ton: gcb(['ton1','ton2','ton3','ton4','ton5','ton6']),
+        formule_politesse: gc('tutoie'), exemple_message: g('exemple_msg'),
+        a_ne_jamais_faire: g('jamais'), cas_transfert: g('transfert'),
+        clients_vip: g('vip'), informations_supplementaires: g('extra')
+      }
+    };
+    return formData;
+  }
+
+  function buildTXT(d) {
+    var sep = '\n' + '-'.repeat(55) + '\n';
+    var ln = function(k, v) { if (!v || (Array.isArray(v) && !v.length)) return ''; return '> ' + k + ' : ' + (Array.isArray(v) ? v.join(', ') : v) + '\n'; };
+    var t = 'BASE DE CONNAISSANCE - IGLOO MATERNITE\nAGENT COMMERCIAL IA\n' + '='.repeat(55) + '\n';
+
+    var b = d.boutique;
+    t += sep + '1. LA BOUTIQUE\n' + sep;
+    t += ln('Nom', b.nom) + ln('Proprietaire', b.proprietaire) + ln('Email', b.email) + ln('Telephone', b.telephone);
+    t += ln('Ville & Pays', b.ville) + ln('Zones de livraison', b.zones_livraison);
+    t += ln('Canaux de vente', b.canaux_vente) + ln('Instagram', b.instagram) + ln('Facebook', b.facebook);
+    t += ln('Description', b.description) + ln('Anciennete', b.anciennete);
+
+    var p = d.produits;
+    t += sep + '2. PRODUITS & GAMMES\n' + sep;
+    t += ln('Categories', p.categories) + ln('Gammes et collections', p.gammes);
+    t += ln('Fourchette de prix', p.fourchette_prix) + ln('Best-sellers', p.bestsellers);
+    t += ln('Ruptures frequentes', p.ruptures) + ln('Personnalisation', p.personnalisation) + ln('Detail personnalisation', p.personnalisation_detail);
+
+    var v = d.ventes;
+    t += sep + '3. PROCESSUS DE VENTE\n' + sep;
+    t += ln('Comment commander', v.processus_commande) + ln('Etapes de commande', v.etapes);
+    t += ln('Modes de paiement', v.paiements) + ln('Delai de livraison', v.delai_livraison);
+    t += ln('Transporteurs', v.transporteurs) + ln('Politique retours', v.retours) + ln('Frais de livraison', v.frais_livraison);
+
+    var f = d.faq;
+    t += sep + '4. FAQ\n' + sep;
+    t += ln('Conseils tailles', f.conseils_tailles) + ln('Rupture de stock', f.rupture_stock);
+    t += ln('Reclamations', f.reclamations) + ln('Promotions', f.promotions) + ln('Detail promotions', f.promotions_detail);
+    t += ln('Conseils grossesse', f.conseils_grossesse) + ln('Sujets exclus', f.sujets_exclus) + ln('Autres FAQ', f.autres_faq);
+
+    var s = d.ton_style;
+    t += sep + '5. TON & STYLE DE L\'AGENT\n' + sep;
+    t += ln('Ton', s.ton) + ln('Formule de politesse', s.formule_politesse);
+    t += ln('Exemple de message', s.exemple_message) + ln('A ne jamais faire', s.a_ne_jamais_faire);
+    t += ln('Cas de transfert', s.cas_transfert) + ln('Clients VIP', s.clients_vip);
+    t += ln('Informations supplementaires', s.informations_supplementaires);
+    return t;
+  }
+
+  function submitForm() {
+    collectData();
+    document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+    document.querySelectorAll('.step-dot').forEach(function(d) { d.classList.add('done'); });
+    document.getElementById('success').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function downloadTXT() {
+    var d = Object.keys(formData).length ? formData : collectData();
+    var blob = new Blob([buildTXT(d)], { type: 'text/plain;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'base-connaissance-igloo-maternite.txt'; a.click();
+  }
+
+  function downloadJSON() {
+    var d = Object.keys(formData).length ? formData : collectData();
+    var blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'base-connaissance-igloo-maternite.json'; a.click();
+  }
+
+  function sendEmail() {
+    var status = document.getElementById('sendStatus');
+    if (!ejsCfg.pk || ejsCfg.pk === 'VOTRE_PUBLIC_KEY') {
+      status.textContent = 'Veuillez configurer EmailJS dans le fichier avant de publier.';
+      status.className = 'send-status err'; return;
+    }
+    var btn = document.getElementById('btnSend');
+    btn.disabled = true; btn.textContent = 'Envoi en cours...'; status.textContent = ''; status.className = 'send-status';
+    var d = Object.keys(formData).length ? formData : collectData();
+    emailjs.send(ejsCfg.svc, ejsCfg.tpl, {
+      to_email: ejsCfg.em, from_name: 'Igloo Maternite',
+      subject: 'Base de connaissance - Igloo Maternite',
+      message: buildTXT(d)
+    }).then(function() {
+      status.textContent = 'Email envoye avec succes !';
+      status.className = 'send-status ok'; btn.textContent = 'Envoye !';
+    }, function(err) {
+      status.textContent = 'Erreur : ' + (err.text || 'Verifiez vos identifiants EmailJS.');
+      status.className = 'send-status err'; btn.disabled = false; btn.textContent = 'Envoyer par email';
+    });
+  }
+</script>
+</body>
+</html>
